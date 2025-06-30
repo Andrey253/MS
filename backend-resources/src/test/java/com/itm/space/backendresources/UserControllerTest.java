@@ -10,25 +10,25 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import java.time.Instant;
-import java.util.Map;
+
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -74,11 +74,11 @@ public class UserControllerTest {
                 "lastName": "lastName",
                 "firstName": "firstName"                        }
                 """.formatted(newAtributUser.toString().substring(0, 2), newAtributUser.toString().substring(0, 2));
-        MvcResult mvcResult = mvc.perform(post("/api/users") // добавляем юзера
+        mvc.perform(post("/api/users") // добавляем юзера
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isOk()).andReturn();
-        mvcResult = mvc.perform(post("/api/users")  // при повторной попытке добавить, сервер даёт ошибку
+        mvc.perform(post("/api/users")  // при повторной попытке добавить, сервер даёт ошибку
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isConflict()).andReturn();
@@ -106,25 +106,37 @@ public class UserControllerTest {
         ResultActions resultActions = mvc.perform(get("/api/users/{id}", idUserAndrey))
                 .andExpect(status().isForbidden());
 
-    } @Test
+    }
+
+    @Test
     @WithMockUser(roles = "USER")
     @SneakyThrows
     void helloPageTestUserRole() {
 
-        ResultActions resultActions = mvc.perform(get("/hello"))
-                .andExpect(status().isNotFound());
+        ResultActions resultActions = mvc.perform(get("/api/users/hello"))
+                .andExpect(status().isForbidden());
 
     }
     @Test
-    @WithMockOAuth2User(username = "admin")
+    @WithMockUser(roles = "MODERATOR")
     @SneakyThrows
-    void helloPageTestModeratorRole() {
+    void helloPageTestUserAdmin() {
 
-        ResultActions resultActions = mvc.perform(get("/hello"))
+        mvc.perform(get("/api/users/hello"))
                 .andExpect(status().isOk());
 
     }
 
+    @Test
+    public void hello_WithCustomAuth() throws Exception {
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "test-user",
+                null,
+                AuthorityUtils.createAuthorityList("ROLE_MODERATOR")
+        );
+
+        mvc.perform(get("/api/users/hello")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth)))
+                .andExpect(status().isOk());
+    }
 }
-
-
