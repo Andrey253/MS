@@ -1,11 +1,9 @@
-package com.itm.space.backendresources.annotation;
+package com.itm.space.backendresources.helpclasses.annotation;
 
-import org.springframework.security.core.*;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.test.context.support.*;
@@ -35,4 +33,4 @@ public class WithMockOAuth2UserSecurityContextFactory implements WithSecurityCon
 
         return context;
     }
-}}
+}
