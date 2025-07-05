@@ -1,29 +1,23 @@
 package com.itm.space.backendresources;
 
-import com.itm.space.backendresources.annotation.WithMockOAuth2User;
+import com.itm.space.backendresources.api.request.UserRequest;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.core.oidc.OidcIdToken;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.security.web.header.Header;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
@@ -39,6 +33,8 @@ public class UserControllerTest {
 
     @Autowired
     private MockMvc mvc;
+//    @Autowired
+//    private RestTemplate restTemplate;
 
     UUID newAtributUser = UUID.randomUUID();
 
@@ -66,22 +62,21 @@ public class UserControllerTest {
     @WithMockUser(roles = "MODERATOR")
     @SneakyThrows
     void createUserTest() {
-
         String request = """
                             { "username": "andrey%s",
                             "email": "test%s@ya.com",
                 "password": "1234",
                 "lastName": "lastName",
-                "firstName": "firstName"                        }
+                "firstName": "firstName"}
                 """.formatted(newAtributUser.toString().substring(0, 2), newAtributUser.toString().substring(0, 2));
         mvc.perform(post("/api/users") // добавляем юзера
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
-                .andExpect(status().isOk()).andReturn();
+                .andExpect(status().isOk());
         mvc.perform(post("/api/users")  // при повторной попытке добавить, сервер даёт ошибку
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
-                .andExpect(status().isConflict()).andReturn();
+                .andExpect(status().isConflict());
 
     }
 
@@ -139,4 +134,12 @@ public class UserControllerTest {
                         .with(SecurityMockMvcRequestPostProcessors.authentication(auth)))
                 .andExpect(status().isOk());
     }
+//    @Test
+//    public void send_user(){
+//        UserRequest user = new UserRequest();
+//
+//
+//  ResponseEntity<String> response =     restTemplate.exchange("google.com", HttpMethod.POST, new HttpEntity<>(new Header("asd","asd")), String.class,user);
+//        response.getBody();
+//    }
 }
